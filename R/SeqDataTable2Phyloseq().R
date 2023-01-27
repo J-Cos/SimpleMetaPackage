@@ -14,6 +14,9 @@
 
 SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NULL, assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence", ReformatSampleNames=TRUE, HandleDuplicates=TRUE){
 
+    require(DECIPHER)
+    require(phyloseq)
+    require(tidyverse)
 
     #check clustering valid, break if not
         validclusterings<-c("ESV", "curatedESV", "OTU", "curatedOTU")
