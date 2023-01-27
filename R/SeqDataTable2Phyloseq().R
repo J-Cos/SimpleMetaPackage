@@ -1,4 +1,4 @@
-#' Load a Matrix
+#' Create phyloseq object.
 #'
 #' This function takes the output of the bioinformatic pipeline into phyloseq.
 #'
