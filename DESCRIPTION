@@ -1,0 +1,16 @@
+Package: BioinformaticsPackage
+Title: Trial bioinformatics package.
+Version: 0.0.0.9000
+Imports:
+    DECIPHER (>= 2.24.0),
+	phyloseq (>= 1.40.0),
+    tidyverse (>= 1.3.2)
+Authors@R: 
+    person("Jake", "Williams", , "j.williams20@imperial.ac.uk", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Trial bioinformatics package.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
