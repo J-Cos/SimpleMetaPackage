@@ -2,7 +2,7 @@
 % Please edit documentation in R/SeqDataTable2Phyloseq().R
 \name{SeqDataTable2Phyloseq}
 \alias{SeqDataTable2Phyloseq}
-\title{Load a Matrix}
+\title{Create phyloseq object.}
 \usage{
 SeqDataTable2Phyloseq(
   SeqDataTablePath,
