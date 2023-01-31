@@ -1,6 +1,6 @@
 #' Create phyloseq object.
 #'
-#' This function takes the output of the bioinformatic pipeline into phyloseq.
+#' This function takes the output of the bioinformatic pipeline into phyloseq. The output will include the run identifier for each sample in the sample_data() slot. You will want to add this column to your metadata to ensure that you can test/control for batch effects. The new metadata can then be added back to the phyloseq object as follows: YourPhyloseq@sam_data <- sample_data(YourMetadata). (Remember your sample names need to match.)
 #'
 #' @param SeqDataTablePath Path to the input SeqDataTable.
 #' @param clustering Type of sequence clustering to be used in the phyloseq object, can be ESV, curatedESV, OTU, or curatedOTU.
@@ -12,7 +12,7 @@
 #' SeqDataTable2Phyloseq(SeqDataTablePath="~/Dropbox/BioinformaticPipeline_Env/Results/16s_multirun_test_SeqDataTable.RDS", clustering="ESV", assignment="Idtaxa")
 #' @export
 
-SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NULL, assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence"){
+SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence"){
 
     require(DECIPHER)
     require(phyloseq)
@@ -141,6 +141,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NUL
             } else {
                 print("Warning: Your SeqDataTable was generated with a early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
                 colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
+                Metadata<-NULL
             }
 
 

@@ -7,7 +7,6 @@
 SeqDataTable2Phyloseq(
   SeqDataTablePath,
   clustering = "ESV",
-  Metadata = NULL,
   assignment = "Idtaxa",
   BLASTThreshold = NULL,
   ClusterAssignment = "RepresentativeSequence"
@@ -26,7 +25,7 @@ SeqDataTable2Phyloseq(
 A phyloseq object generated from the input SeqDataTable
 }
 \description{
-This function takes the output of the bioinformatic pipeline into phyloseq.
+This function takes the output of the bioinformatic pipeline into phyloseq. The output will include the run identifier for each sample in the sample_data() slot. You will want to add this column to your metadata to ensure that you can test/control for batch effects. The new metadata can then be added back to the phyloseq object as follows: YourPhyloseq@sam_data <- sample_data(YourMetadata). (Remember your sample names need to match.)
 }
 \examples{
 SeqDataTable2Phyloseq(SeqDataTablePath="23s_test_SeqDataTable.RDS", clustering="curatedOTU", assignment="BLAST", ClusterAssignment="RepresentativeSequence")
