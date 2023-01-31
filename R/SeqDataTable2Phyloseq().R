@@ -12,11 +12,52 @@
 #' SeqDataTable2Phyloseq(SeqDataTablePath="~/Dropbox/BioinformaticPipeline_Env/Results/16s_multirun_test_SeqDataTable.RDS", clustering="ESV", assignment="Idtaxa")
 #' @export
 
-SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NULL, assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence", ReformatSampleNames=TRUE, HandleDuplicates=TRUE){
+SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NULL, assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence"){
 
     require(DECIPHER)
     require(phyloseq)
     require(tidyverse)
+
+    #internal functions
+        reformatSampleNames<-function(list_item) {
+            string<-unlist(strsplit(list_item, "_"))
+            newstring<-string[c(-1, (-length(string)+1):-length(string))]
+            newstring<-paste(newstring, collapse="_")
+            return(newstring)
+        }
+        
+        HandleDuplicateSamplesInMultipleRuns<-function(otumat){            
+            #1) pick deepest version of any duplicate samples
+                StrippedSampleNames_original<-otumat %>% colnames %>%
+                        strsplit(., "__") %>%
+                        unlist  %>%
+                        `[`(c(TRUE, FALSE))
+                
+                DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
+                for (DuplicatedSample in DuplicatedSamples) {
+                    DuplicateSampleRunNames<-colnames(otumat)[grep(DuplicatedSample, colnames(otumat),fixed=TRUE)]
+                    SizeOfDuplicates<-otumat[,DuplicateSampleRunNames] %>% colSums
+                    DuplicateToKeep<-sample(names(SizeOfDuplicates[SizeOfDuplicates==max(SizeOfDuplicates)]), 1) #keep biggest duplicate sample in case there are two equally large)
+                    DuplicatesToRemove<-DuplicateSampleRunNames[DuplicateSampleRunNames!=DuplicateToKeep] #
+                    otumat<-otumat[,-which(colnames(otumat)%in%DuplicatesToRemove)] #remove unwanted duplicate colums from otumat
+                }
+            
+            # 2) strip '__RunX' from end of sample name and record 'RunX' in metadata 
+                SampsAndRuns<-otumat %>% colnames %>%
+                            strsplit(., "__") %>%
+                            unlist 
+                StrippedSampleNames<-SampsAndRuns %>%
+                            `[`(c(TRUE, FALSE))
+                RunIdentifier<-SampsAndRuns %>%
+                            `[`(!c(TRUE, FALSE))
+                
+                colnames(otumat)<-StrippedSampleNames
+
+                
+                Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% sample_data
+
+            return(list(otumat, Metadata))
+        }
 
     #check clustering valid, break if not
         validclusterings<-c("ESV", "curatedESV", "OTU", "curatedOTU")
@@ -85,58 +126,22 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", Metadata=NUL
                         as.matrix()
                 }
 
-            # if sample names have run appended 
-                HandleDuplicateSamplesInMultipleRuns<-function(otumat){            
-                    #1) pick deepest version of any duplicate samples
-                        StrippedSampleNames_original<-otumat %>% colnames %>%
-                                strsplit(., "__") %>%
-                                unlist  %>%
-                                `[`(c(TRUE, FALSE))
-                        
-                        DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
-                        for (DuplicatedSample in DuplicatedSamples) {
-                            DuplicateSampleRunNames<-colnames(otumat)[grep(DuplicatedSample, colnames(otumat),fixed=TRUE)]
-                            SizeOfDuplicates<-otumat[,DuplicateSampleRunNames] %>% colSums
-                            DuplicateToKeep<-sample(names(SizeOfDuplicates[SizeOfDuplicates==max(SizeOfDuplicates)]), 1) #keep biggest duplicate sample in case there are two equally large)
-                            DuplicatesToRemove<-DuplicateSampleRunNames[DuplicateSampleRunNames!=DuplicateToKeep] #
-                            otumat<-otumat[,-which(colnames(otumat)%in%DuplicatesToRemove)] #remove unwanted duplicate colums from otumat
-                        }
-                    
-                    # 2) strip '__RunX' from end of sample name and record 'RunX' in metadata 
-                        SampsAndRuns<-otumat %>% colnames %>%
-                                    strsplit(., "__") %>%
-                                    unlist 
-                        StrippedSampleNames<-SampsAndRuns %>%
-                                    `[`(c(TRUE, FALSE))
-                        RunIdentifier<-SampsAndRuns %>%
-                                    `[`(!c(TRUE, FALSE))
-                        
-                        colnames(otumat)<-StrippedSampleNames
+    #check pipeline version used
+        RunAppendedToSample<-otumat %>% colnames %>% grepl( "__Run", ., fixed = TRUE) %>% all
 
-                        
-                        Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% sample_data
-
-                    return(list(otumat, Metadata))
-                }
-
-            if (HandleDuplicates) {
+            if (RunAppendedToSample) {
                 HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat)
                 otumat<-HandledDuplicates[[1]]
                 Metadata<-HandledDuplicates[[2]]
+
+                #remove "Sample_" and added to front of sample names by pipeline and "001" added by sequencin
+                colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
+                rownames(Metadata)<-lapply(rownames(Metadata), reformatSampleNames)
+
+            } else {
+                print("Warning: Your SeqDataTable was generated with a early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
+                colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
             }
-
-                #remove "Sample_" and added to front of sample names by pipeline and "001" added by sequencing
-                    if(ReformatSampleNames){  
-                        reformatSampleNames<-function(list_item) {
-                            string<-unlist(strsplit(list_item, "_"))
-                            newstring<-string[c(-1, (-length(string)+1):-length(string))]
-                            newstring<-paste(newstring, collapse="_")
-                            return(newstring)
-                        }
-                        colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
-                        rownames(Metadata)<-lapply(rownames(Metadata), reformatSampleNames)
-
-                    }
 
 
         #taxmat

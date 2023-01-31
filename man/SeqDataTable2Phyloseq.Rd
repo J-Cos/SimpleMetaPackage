@@ -10,9 +10,7 @@ SeqDataTable2Phyloseq(
   Metadata = NULL,
   assignment = "Idtaxa",
   BLASTThreshold = NULL,
-  ClusterAssignment = "RepresentativeSequence",
-  ReformatSampleNames = TRUE,
-  HandleDuplicates = TRUE
+  ClusterAssignment = "RepresentativeSequence"
 )
 }
 \arguments{
