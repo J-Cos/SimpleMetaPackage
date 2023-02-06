@@ -32,6 +32,8 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                         strsplit(., "__") %>%
                         unlist  %>%
                         `[`(c(TRUE, FALSE))
+
+                StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist
                 
                 DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
                 for (DuplicatedSample in DuplicatedSamples) {
