@@ -6,13 +6,14 @@
 #' @param clustering Type of sequence clustering to be used in the phyloseq object, can be ESV, curatedESV, OTU, or curatedOTU.
 #' @param assignment Taxonomic assignments from which to generate the taxa_table(). Can be "BLAST", "Idtaxa" or FALSE.
 #' @param ClusterAssignment How clusters will recive taxonomic assignments. Can be "RepresentativeSequence" or between 0 and 1 to represent the proportion of reads that must share an assignment for an OTU to receive that assignment.
+#' @param StandardFastqNaming Whether fastqs were named as standard convention ("[yoursamplename]_XX_L001_R1/2_001.fastq") or some other way. Default TRUE.
 #' @return A phyloseq object generated from the input SeqDataTable
 #' @examples
 #' SeqDataTable2Phyloseq(SeqDataTablePath="23s_test_SeqDataTable.RDS", clustering="curatedOTU", assignment="BLAST", ClusterAssignment="RepresentativeSequence")
 #' SeqDataTable2Phyloseq(SeqDataTablePath="~/Dropbox/BioinformaticPipeline_Env/Results/16s_multirun_test_SeqDataTable.RDS", clustering="ESV", assignment="Idtaxa")
 #' @export
 
-SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence"){
+SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence", StandardFastqNaming=TRUE){
 
     require(DECIPHER)
     require(phyloseq)
@@ -26,15 +27,16 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
             return(newstring)
         }
         
-        HandleDuplicateSamplesInMultipleRuns<-function(otumat){            
+        HandleDuplicateSamplesInMultipleRuns<-function(otumat, StandardFastqNaming){            
             #1) pick deepest version of any duplicate samples
                 StrippedSampleNames_original<-otumat %>% colnames %>%
                         strsplit(., "__") %>%
                         unlist  %>%
                         `[`(c(TRUE, FALSE))
+                if (StandardFastqNaming){
+                    StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist
+                }
 
-                StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist
-                
                 DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
                 for (DuplicatedSample in DuplicatedSamples) {
                     DuplicateSampleRunNames<-colnames(otumat)[grep(DuplicatedSample, colnames(otumat),fixed=TRUE)]
@@ -132,13 +134,18 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
         RunAppendedToSample<-otumat %>% colnames %>% grepl( "__Run", ., fixed = TRUE) %>% all
 
             if (RunAppendedToSample) {
-                HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat)
+                HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat, StandardFastqNaming)
                 otumat<-HandledDuplicates[[1]]
                 Metadata<-HandledDuplicates[[2]]
 
                 #remove "Sample_" and added to front of sample names by pipeline and "001" added by sequencin
-                colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
-                rownames(Metadata)<-lapply(rownames(Metadata), reformatSampleNames)
+                if (StandardFastqNaming){
+                    colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
+                    rownames(Metadata)<-lapply(rownames(Metadata), reformatSampleNames)
+                } else { #strip the 'Sample_' part only 
+                    colnames(otumat)<-sub("^.*?_", "", colnames(otumat))
+                    rownames(Metadata)<-sub("^.*?_", "", rownames(Metadata))
+                }
 
             } else {
                 print("Warning: Your SeqDataTable was generated with a early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")

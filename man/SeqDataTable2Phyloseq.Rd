@@ -9,7 +9,8 @@ SeqDataTable2Phyloseq(
   clustering = "ESV",
   assignment = "Idtaxa",
   BLASTThreshold = NULL,
-  ClusterAssignment = "RepresentativeSequence"
+  ClusterAssignment = "RepresentativeSequence",
+  StandardFastqNaming = TRUE
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ SeqDataTable2Phyloseq(
 \item{assignment}{Taxonomic assignments from which to generate the taxa_table(). Can be "BLAST", "Idtaxa" or FALSE.}
 
 \item{ClusterAssignment}{How clusters will recive taxonomic assignments. Can be "RepresentativeSequence" or between 0 and 1 to represent the proportion of reads that must share an assignment for an OTU to receive that assignment.}
+
+\item{StandardFastqNaming}{Whether fastqs were named as standard convention ("\link{yoursamplename}_XX_L001_R1/2_001.fastq") or some other way. Default TRUE.}
 }
 \value{
 A phyloseq object generated from the input SeqDataTable
