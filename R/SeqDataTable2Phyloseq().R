@@ -34,7 +34,9 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                         unlist  %>%
                         `[`(c(TRUE, FALSE))
                 if (StandardFastqNaming){
-                    StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist
+                    StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist %>% paste0("_", . ,"_")  #surrounding underscores added to ensure that nested names aren't deduplicated incorrectly
+                } else if (!StandardFastqNaming) {
+                   StrippedSampleNames_original <-StrippedSampleNames_original %>% paste0( . ,"_")  #  #only trailing underscore added as no name reformatting for non-standard named fastqs - thus they start with "Sample_"
                 }
 
                 DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
