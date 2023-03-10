@@ -31,8 +31,13 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
             #1) pick deepest version of any duplicate samples
                 StrippedSampleNames_original<-otumat %>% colnames %>%
                         strsplit(., "__") %>%
-                        unlist  %>%
-                        `[`(c(TRUE, FALSE))
+                        unlist
+                
+                if (length(StrippedSampleNames_original)==length(colnames(otumat))*2) { # if runs were appended length is doubled
+                StrippedSampleNames_original<- StrippedSampleNames_original %>%    `[`(c(TRUE, FALSE))
+                }
+
+                        
                 if (StandardFastqNaming){
                     StrippedSampleNames_original<-lapply(StrippedSampleNames_original, reformatSampleNames) %>% unlist %>% paste0("_", . ,"_")  #surrounding underscores added to ensure that nested names aren't deduplicated incorrectly
                 } else if (!StandardFastqNaming) {
@@ -52,16 +57,17 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                 SampsAndRuns<-otumat %>% colnames %>%
                             strsplit(., "__") %>%
                             unlist 
-                StrippedSampleNames<-SampsAndRuns %>%
-                            `[`(c(TRUE, FALSE))
-                RunIdentifier<-SampsAndRuns %>%
-                            `[`(!c(TRUE, FALSE))
-                
-                colnames(otumat)<-StrippedSampleNames
+                if (length(SampsAndRuns)==length(colnames(otumat))*2) { # if runs were appended length is doubled
+                    StrippedSampleNames<-SampsAndRuns %>%
+                                `[`(c(TRUE, FALSE))
+                    RunIdentifier<-SampsAndRuns %>%
+                                `[`(!c(TRUE, FALSE))
+                    
+                    colnames(otumat)<-StrippedSampleNames
 
-                
-                Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% sample_data
-
+                    
+                    Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% sample_data
+                } else {Metadata<-NULL}
             return(list(otumat, Metadata))
         }
 
@@ -150,8 +156,16 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                 }
 
             } else {
-                print("Warning: Your SeqDataTable was generated with a early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
+                print("Warning: Your SeqDataTable was generated with an early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
+                HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat, StandardFastqNaming)
+                otumat<-HandledDuplicates[[1]]
+
+                #remove "Sample_" and added to front of sample names by pipeline and "001" added by sequencin
+                if (StandardFastqNaming){
                 colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
+                } else { #strip the 'Sample_' part only 
+                    colnames(otumat)<-sub("^.*?_", "", colnames(otumat))
+                }
                 Metadata<-NULL
             }
 
