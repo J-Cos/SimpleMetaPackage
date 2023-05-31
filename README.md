@@ -1,5 +1,5 @@
 # BioinformaticsPackage
-An R package to support the conversion of outputs from SimplePipeline to phyloseq objects.
+An R package to support the conversion of outputs from SimplePipeline (https://github.com/J-Cos/BioinformaticPipeline) to phyloseq objects.
 
 
 ## How to use:
