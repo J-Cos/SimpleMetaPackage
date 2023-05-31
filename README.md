@@ -1,5 +1,5 @@
 # BioinformaticsPackage
-A trial bioinformatics package.
+An R package to support the conversion of outputs from SimplePipeline to phyloseq objects.
 
 
 ## How to use:
