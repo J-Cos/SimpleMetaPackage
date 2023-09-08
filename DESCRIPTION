@@ -1,4 +1,4 @@
-Package: BioinformaticsPackage
+Package: SimpleMetaPackage
 Title: Trial bioinformatics package.
 Version: 0.0.0.9000
 Imports:
