@@ -1,4 +1,5 @@
-# SimpleMetaPackage ![image](https://github.com/J-Cos/BioinformaticsPackage/assets/72385600/1f3a9aef-3408-4b6a-b0f8-a88e75818e26)
+# SimpleMetaPackage  [![DOI](https://zenodo.org/badge/594133737.svg)](https://zenodo.org/badge/latestdoi/594133737)
+
 
 An R package to support the conversion of outputs from SimpleMetaPipeline (https://github.com/J-Cos/SimpleMetaPipeline) to phyloseq objects and support multi-algorithm agreement tests.
 
