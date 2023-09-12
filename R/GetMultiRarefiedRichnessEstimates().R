@@ -18,6 +18,7 @@ GetMultiRarefiedRichnessEstimates<-function(ps, RarefyDepth=10000, NumReplicates
     require(phyloseq)
     require(tidyverse)
 
+    if (all(RarefyDepth>(sample_sums(ps)))) {stop("RarefyDepth deeper than deepest sample")}
     ps_multiplerarefieds_list<-list()
 
     ps<-prune_samples(sample_sums(ps)>RarefyDepth, ps)

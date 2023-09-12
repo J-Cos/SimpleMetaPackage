@@ -73,9 +73,11 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
 
     #check clustering valid, break if not
         validclusterings<-c("ESV", "curatedESV", "OTU", "curatedOTU")
-        if (!clustering  %in%  validclusterings) { print(paste0(clustering, " clustering choice invalid please choose one of: ", validclusterings)) ; return(NULL)}
+        if (!clustering  %in%  validclusterings) { stop(paste0(clustering, " clustering choice invalid please choose one of: ", paste(validclusterings)))}
         validassignments<-c("BLAST", "Idtaxa", "None")
-        if (!assignment  %in%  validassignments) { print(paste0( assignment, " assignment choice invalid please choose one of: ", validassignments)) ; return(NULL) }
+        if (!assignment  %in%  validassignments) { stop(paste0( assignment, " assignment choice invalid please choose one of: ", paste(validassignments)))}
+    #check ClusterAssignment within bounds if numeric
+        if (!ClusterAssignment=="RepresentativeSequence" & ( ClusterAssignment<0 | ClusterAssignment>1) ) {stop ("ClusterAssignment selection invalid")}
 
     #preparatory steps
 
@@ -156,13 +158,15 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                 }
 
             } else {
-                print("Warning: Your SeqDataTable was generated with an early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
+                warning("Warning: Your SeqDataTable was generated with an early version of the bioinformatic pipeline with suboptimal handling of multiple sequencing runs. If your data includes multiple sequencing runs consider rerunnning your bioinformatics.")
                 HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat, StandardFastqNaming)
                 otumat<-HandledDuplicates[[1]]
 
                 #remove "Sample_" and added to front of sample names by pipeline and "001" added by sequencin
                 if (StandardFastqNaming){
-                colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames)
+                #colnames(otumat)<-lapply(colnames(otumat), reformatSampleNames) # hashed out as it can never be called as the combination of 
+                                                                                # standardfastq naming and deprecated sample names throws an error in the 
+                                                                                # HandleDuplicateSamplesInMultipleRuns function.
                 } else { #strip the 'Sample_' part only 
                     colnames(otumat)<-sub("^.*?_", "", colnames(otumat))
                 }
@@ -171,51 +175,53 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
 
 
         #taxmat
-        if (clustering=="ESV") {
-              taxmat<-SeqDataTable[,AssignmentIndices]
-                taxmat$cluster<-SeqDataTable$ESV
-                taxmat<-arrange(taxmat, cluster) %>%
-                    column_to_rownames("cluster") %>%
-                    as.matrix()
-        } else {
+        if (assignment != "None") {
+            if (clustering=="ESV") {
+                taxmat<-SeqDataTable[,AssignmentIndices]
+                    taxmat$cluster<-SeqDataTable$ESV
+                    taxmat<-arrange(taxmat, cluster) %>%
+                        column_to_rownames("cluster") %>%
+                        as.matrix()
+            } else {
 
-            if (ClusterAssignment=="RepresentativeSequence") { #take assignments from representative seqs
-                taxmat<-SeqDataTable[SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE,][,AssignmentIndices]
-                taxmat$cluster<-SeqDataTable[[clustering]][SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE]
-                taxmat<-arrange(taxmat, cluster) %>%
-                    column_to_rownames("cluster") %>%
-                    as.matrix()
-            } else { # take assignments based on most common assignments to ESVs within cluster (with threshold set as function argument)
-                taxmat<-c()
-                for (cluster in rownames(otumat)) { #loop through clusters
-                    ClusterDataTable<-SeqDataTable[SeqDataTable[[symclustering]]==cluster,]
-                    ClusterAssignments<-cbind(  ClusterDataTable[,AssignmentIndices],
-                            Proportions=rowSums(ClusterDataTable[,SampleIndices])/sum(ClusterDataTable[,SampleIndices]) )
-                    
-                    clusterRow<-cluster
-                    Ranks<-colnames(ClusterAssignments)[-length(colnames(ClusterAssignments))]
-                    for (col in Ranks ) { #loop through ranks for the cluster
-                        if (length(unique(ClusterAssignments[[col]]))==1 ) {
-                            clusterRow <- c( clusterRow,unique(ClusterAssignments[[col]]) )
-                        } else {
-                            AbundancePerAssignment<-ClusterAssignments %>%
-                                                        group_by(!!sym(col)) %>%
-                                                        summarise(Proportions=sum(Proportions))
-                            if (max(AbundancePerAssignment$Proportions) >ClusterAssignment) {
-                                #colAssignment<-as.character(AbundancePerAssignment[AbundancePerAssignment$Proportions==max(AbundancePerAssignment$Proportions),1])
-                                colAssignment<-as.character(AbundancePerAssignment[order(-AbundancePerAssignment$Proportions),][1,1]) #avoids problem of two equally abundant options
-                                clusterRow <- c( clusterRow,colAssignment )
+                if (ClusterAssignment=="RepresentativeSequence") { #take assignments from representative seqs
+                    taxmat<-SeqDataTable[SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE,][,AssignmentIndices]
+                    taxmat$cluster<-SeqDataTable[[clustering]][SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE]
+                    taxmat<-arrange(taxmat, cluster) %>%
+                        column_to_rownames("cluster") %>%
+                        as.matrix()
+                } else { # take assignments based on most common assignments to ESVs within cluster (with threshold set as function argument)
+                    taxmat<-c()
+                    for (cluster in rownames(otumat)) { #loop through clusters
+                        ClusterDataTable<-SeqDataTable[SeqDataTable[[symclustering]]==cluster,]
+                        ClusterAssignments<-cbind(  ClusterDataTable[,AssignmentIndices],
+                                Proportions=rowSums(ClusterDataTable[,SampleIndices])/sum(ClusterDataTable[,SampleIndices]) )
+                        
+                        clusterRow<-cluster
+                        Ranks<-colnames(ClusterAssignments)[-length(colnames(ClusterAssignments))]
+                        for (col in Ranks ) { #loop through ranks for the cluster
+                            if (length(unique(ClusterAssignments[[col]]))==1 ) {
+                                clusterRow <- c( clusterRow,unique(ClusterAssignments[[col]]) )
                             } else {
-                                clusterRow<- c( clusterRow,NA )
+                                AbundancePerAssignment<-ClusterAssignments %>%
+                                                            group_by(!!sym(col)) %>%
+                                                            summarise(Proportions=sum(Proportions))
+                                if (max(AbundancePerAssignment$Proportions) >ClusterAssignment) {
+                                    #colAssignment<-as.character(AbundancePerAssignment[AbundancePerAssignment$Proportions==max(AbundancePerAssignment$Proportions),1])
+                                    colAssignment<-as.character(AbundancePerAssignment[order(-AbundancePerAssignment$Proportions),][1,1]) #avoids problem of two equally abundant options
+                                    clusterRow <- c( clusterRow,colAssignment )
+                                } else {
+                                    clusterRow<- c( clusterRow,NA )
+                                }
                             }
                         }
+                    names(clusterRow)<-c("clusterName",Ranks)
+                    taxmat<-as.data.frame(rbind(taxmat, clusterRow))
                     }
-                names(clusterRow)<-c("clusterName",Ranks)
-                taxmat<-as.data.frame(rbind(taxmat, clusterRow))
+                rownames(taxmat)<-NULL
+                taxmat<-column_to_rownames(taxmat,"clusterName" )
+                taxmat<-as.matrix(taxmat)
                 }
-            rownames(taxmat)<-NULL
-            taxmat<-column_to_rownames(taxmat,"clusterName" )
-            taxmat<-as.matrix(taxmat)
             }
         }
 

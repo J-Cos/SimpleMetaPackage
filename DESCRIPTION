@@ -1,5 +1,5 @@
 Package: SimpleMetaPackage
-Title: Trial bioinformatics package.
+Title: SimpleMetaPackage
 Version: 0.0.0.9000
 Imports:
     DECIPHER (>= 2.24.0),
@@ -17,3 +17,6 @@ RoxygenNote: 7.2.3
 Depends: 
     R (>= 2.10)
 LazyData: true
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
