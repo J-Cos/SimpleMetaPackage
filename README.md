@@ -6,8 +6,8 @@ An R package to support the conversion of outputs from SimpleMetaPipeline (https
 
 ## How to use:
 #### Install and load the package
-    devtools::install_github("J-Cos/BioinformaticsPackage")
-    library(BioinformaticsPackage)
+    devtools::install_github("J-Cos/SimpleMetaPackage")
+    library(SimpleMetaPackage)
 
 #### Convert your data to phyloseq object
     ps<-SeqDataTable2Phyloseq(SeqDataTablePath= [YOUR PATH HERE] )
