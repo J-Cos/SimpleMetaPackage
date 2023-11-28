@@ -2,11 +2,11 @@
 #'
 #' This function takes the output of the bioinformatic pipeline into phyloseq. The output will include the run identifier for each sample in the sample_data() slot. You will want to add this column to your metadata to ensure that you can test/control for batch effects. The new metadata can then be added back to the phyloseq object as follows: YourPhyloseq@sam_data <- sample_data(YourMetadata). (Remember your sample names need to match.)
 #'
-#' @param SeqDataTablePath Path to the input SeqDataTable.
-#' @param clustering Type of sequence clustering to be used in the phyloseq object, can be ESV, curatedESV, OTU, or curatedOTU.
-#' @param assignment Taxonomic assignments from which to generate the taxa_table(). Can be "BLAST", "Idtaxa" or FALSE.
-#' @param ClusterAssignment How clusters will recive taxonomic assignments. Can be "RepresentativeSequence" or between 0 and 1 to represent the proportion of reads that must share an assignment for an OTU to receive that assignment.
-#' @param StandardFastqNaming Whether fastqs were named as standard convention ("[yoursamplename]_XX_L001_R1/2_001.fastq") or some other way. Default TRUE.
+#' @param SeqDataTablePath Path to the input SeqDataTable.RDS.
+#' @param clustering Type of sequence clustering to be used in the phyloseq object, can be "ESV", "curatedESV", "OTU", or "curatedOTU". Default = "ESV"
+#' @param assignment Taxonomic assignments from which to generate the taxa_table(). Can be "BLAST", "Idtaxa" or FALSE (no taxa_table created). Default = "Idtaxa".
+#' @param ClusterAssignment How clusters will recive taxonomic assignments. Can be "RepresentativeSequence" or between 0 and 1 to represent the proportion of reads that must share an assignment for an OTU to receive that assignment. Default = "RepresentativeSequence".
+#' @param StandardFastqNaming Whether fastqs were named as standard convention ("[yoursamplename]_XX_L001_R1/2_001.fastq") or some other way. Default = TRUE, you are unlikely to need to chnage this.
 #' @return A phyloseq object generated from the input SeqDataTable
 #' @examples
 #' SeqDataTable2Phyloseq(SeqDataTablePath="23s_test_SeqDataTable.RDS", clustering="curatedOTU", assignment="BLAST", ClusterAssignment="RepresentativeSequence")
