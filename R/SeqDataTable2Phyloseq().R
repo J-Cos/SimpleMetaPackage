@@ -98,7 +98,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                                     "CuratedOTURepresentativeSequence")
             
             #ensure standard order to clustering cols as above
-            SeqDataTable<-SeqDataTable %>% relocate(clusteringcolumns)
+            SeqDataTable<-SeqDataTable %>% relocate(all_of(clusteringcolumns))
 
         #recode clustering variables to work with tidyverse as arguments
             symclustering<-sym(clustering)
@@ -128,7 +128,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
             #create
                 if (clustering=="ESV"){
                     otumat<-SeqDataTable %>% 
-                        select("ESV", SampleIndices) %>%
+                        select("ESV", all_of(SampleIndices)) %>%
                         column_to_rownames("ESV")%>% 
                         as.matrix()
 
