@@ -7,23 +7,23 @@ test_that("produces phyloseq", {
 })
 
 test_that("all clustering options work", {
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "ESV")), 110)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedESV")), 101)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "OTU")), 97)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU")), 47)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "ESV")), 110)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedESV")), 101)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "OTU")), 97)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU")), 47)
     expect_error(SeqDataTable2Phyloseq(SDTfile, clustering = "badOption"))
 })
 
 test_that("all clustering options work", {
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "ESV")), 110)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedESV")), 101)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "OTU")), 97)
-    expect_equal(ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU")), 47)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "ESV")), 110)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedESV")), 101)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "OTU")), 97)
+    expect_equal(phyloseq::ntaxa(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU")), 47)
 })
 
 test_that("different assignment proportions gets different results", {
-    expect_false( isTRUE( all.equal( tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment="RepresentativeSequence")), tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.1)) )))
-    expect_false( isTRUE( all.equal( tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.8)), tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.1)) )))
+    expect_false( isTRUE( all.equal( phyloseq::tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment="RepresentativeSequence")), phyloseq::tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.1)) )))
+    expect_false( isTRUE( all.equal( phyloseq::tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.8)), phyloseq::tax_table(SeqDataTable2Phyloseq(SDTfile, clustering = "curatedOTU", ClusterAssignment=0.1)) )))
 })
 
 test_that("assignment proportions >1 fail", {
@@ -34,8 +34,8 @@ test_that("assignment proportions >1 fail", {
 
 
 test_that("standard Fastq naming argument works", {
-    expect_identical( sort(sample_names(SeqDataTable2Phyloseq(SDTfile, StandardFastqNaming=FALSE))),  c("SMALLDuplicate_RVS_Low_Illi_123_10_L001", "SMALL_CS_Low_Illi_127_42_L001", "SMALL_RVS_Low_Illi_123_10_L001"))
-    expect_identical( sort(sample_names(SeqDataTable2Phyloseq(SDTfile, StandardFastqNaming=TRUE))),  c("SMALLDuplicate_RVS_Low_Illi_123", "SMALL_CS_Low_Illi_127", "SMALL_RVS_Low_Illi_123"))
+    expect_identical( sort(phyloseq::sample_names(SeqDataTable2Phyloseq(SDTfile, StandardFastqNaming=FALSE))),  c("SMALLDuplicate_RVS_Low_Illi_123_10_L001", "SMALL_CS_Low_Illi_127_42_L001", "SMALL_RVS_Low_Illi_123_10_L001"))
+    expect_identical( sort(phyloseq::sample_names(SeqDataTable2Phyloseq(SDTfile, StandardFastqNaming=TRUE))),  c("SMALLDuplicate_RVS_Low_Illi_123", "SMALL_CS_Low_Illi_127", "SMALL_RVS_Low_Illi_123"))
 })
 
 test_that("expect warning on deprecated SDTs (before multi run management implemented) if non standard fastq naming chosen", {

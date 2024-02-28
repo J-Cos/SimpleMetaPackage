@@ -10,8 +10,6 @@
 
 AssignmentAgreement<-function(SDT){ 
 
-    require(tidyverse)
-
     #get correct columns
         NumCols<-length(names(SDT))
         LastNonTaxaColumn<-which(names(SDT)=="CuratedOTURepresentativeSequence")

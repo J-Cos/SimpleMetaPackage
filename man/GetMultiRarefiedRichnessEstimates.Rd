@@ -4,7 +4,7 @@
 \alias{GetMultiRarefiedRichnessEstimates}
 \title{Get replicate richness estiamtes by rarefying multiple times.}
 \usage{
-GetMultiRarefiedRichnessEstimates(ps, RarefyDepth = 10000, NumReplicates = 100)
+GetMultiRarefiedRichnessEstimates(ps, RarefyDepth = 2000, NumReplicates = 100)
 }
 \arguments{
 \item{ps}{A phyloseq object as input.}
@@ -20,5 +20,5 @@ A tibble with mutliple richness metrics for all samples deeper than the rarefy d
 This function produces multi-rarefied richness estiamtes from a hyloseq object.
 }
 \examples{
-GetMultiRarefiedRichnessEstimates(ps=ps, RarefyDepth=50000)
+GetMultiRarefiedRichnessEstimates(ps=ps, RarefyDepth=2000)
 }

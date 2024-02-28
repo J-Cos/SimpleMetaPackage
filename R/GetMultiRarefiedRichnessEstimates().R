@@ -7,43 +7,37 @@
 #' @param NumReplicates The number of rarefied replicates to produce
 #' @return A tibble with mutliple richness metrics for all samples deeper than the rarefy depth. Each has all metadata from the phyloseq object along with the random seed used to generate it.
 #' @examples
-#' GetMultiRarefiedRichnessEstimates(ps=ps, RarefyDepth=50000)
+#' GetMultiRarefiedRichnessEstimates(ps=ps, RarefyDepth=2000)
 #' @export
 
+GetMultiRarefiedRichnessEstimates<-function(ps, RarefyDepth=2000, NumReplicates=100){ # default 10,000 min sample size
 
-
-
-GetMultiRarefiedRichnessEstimates<-function(ps, RarefyDepth=10000, NumReplicates=100){ # default 10,000 min sample size
-
-    require(phyloseq)
-    require(tidyverse)
-
-    if (all(RarefyDepth>(sample_sums(ps)))) {stop("RarefyDepth deeper than deepest sample")}
+    if (all(RarefyDepth>(phyloseq::sample_sums(ps)))) {stop("RarefyDepth deeper than deepest sample")}
     ps_multiplerarefieds_list<-list()
 
-    ps<-prune_samples(sample_sums(ps)>RarefyDepth, ps)
+    ps<-phyloseq::prune_samples(phyloseq::sample_sums(ps)>RarefyDepth, ps)
 
     for (i in 1:NumReplicates) {
 
             richness_rarefied<-ps %>%
-                rarefy_even_depth(  physeq=., sample.size = RarefyDepth, rngseed = i,
+                phyloseq::rarefy_even_depth(sample.size = RarefyDepth, rngseed = i,
                                     replace = TRUE, trimOTUs = TRUE, verbose = TRUE) %>%
-                estimate_richness( measures=c("Observed", "Shannon", "Chao1"))
+                phyloseq::estimate_richness( measures=c("Observed", "Shannon", "Chao1"))
 
             meta<- ps%>%
-                sample_data %>%
-                as_tibble %>%
-                mutate("sample_names" = ps %>% sample_names %>% make.names )
+                phyloseq::sample_data(.) %>%
+                tibble::as_tibble(.) %>%
+                dplyr::mutate(., "sample_names" = ps %>% phyloseq::sample_names(.) %>% make.names )
 
             combined_richness <- meta %>%
-                left_join(richness_rarefied%>% rownames_to_column,
+                dplyr::left_join(richness_rarefied%>% tibble::rownames_to_column(.),
                             by = c("sample_names"="rowname")) %>%
-                mutate_if( is.character,as_factor)
+                dplyr::mutate_if( is.character,forcats::as_factor)
             
             ps_multiplerarefieds_list[[i]]<-combined_richness
         }
 
-    ps_multiplerarefieds<-bind_rows(ps_multiplerarefieds_list, .id = "RandomSeed")
+    ps_multiplerarefieds<-dplyr::bind_rows(ps_multiplerarefieds_list, .id = "RandomSeed")
 
     return(ps_multiplerarefieds)
 

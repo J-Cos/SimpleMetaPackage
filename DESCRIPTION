@@ -2,9 +2,12 @@ Package: SimpleMetaPackage
 Title: SimpleMetaPackage
 Version: 0.0.0.9000
 Imports:
-    DECIPHER (>= 2.24.0),
-	phyloseq (>= 1.40.0),
-    tidyverse (>= 1.3.2)
+    Biostrings  (>= 2.64.1),
+    dplyr (>= 1.1.3),
+    forcats  (>= 1.0.0),
+    magrittr  (>= 2.0.3),
+    phyloseq (>= 1.40.0),
+    tibble  (>= 3.2.1),
 Authors@R: 
     person("Jake", "Williams", , "j.williams20@imperial.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
@@ -14,7 +17,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Depends: 
-    R (>= 2.10)
+    R (>= 2.10),
 LazyData: true
 Suggests: 
     testthat (>= 3.0.0)

@@ -5,19 +5,17 @@
 #' @param SeqDataTablePath Path to the input SeqDataTable.RDS.
 #' @param clustering Type of sequence clustering to be used in the phyloseq object, can be "ESV", "curatedESV", "OTU", or "curatedOTU". Default = "ESV"
 #' @param assignment Taxonomic assignments from which to generate the taxa_table(). Can be "BLAST", "Idtaxa" or FALSE (no taxa_table created). Default = "Idtaxa".
+#' @param BLASTThreshold Whether to filter out BLAST assignments below some threshold percent idential and query coverage, value can range between 0 and 100. If NULL then no assignments are filtered. Default = NULL.
 #' @param ClusterAssignment How clusters will recive taxonomic assignments. Can be "RepresentativeSequence" or between 0 and 1 to represent the proportion of reads that must share an assignment for an OTU to receive that assignment. Default = "RepresentativeSequence".
-#' @param StandardFastqNaming Whether fastqs were named as standard convention ("[yoursamplename]_XX_L001_R1/2_001.fastq") or some other way. Default = TRUE, you are unlikely to need to chnage this.
+#' @param StandardFastqNaming Whether fastqs were named as standard convention ("yoursamplename_XX_L001_R1/2_001.fastq") or some other way. Default = TRUE, you are unlikely to need to chnage this.
 #' @return A phyloseq object generated from the input SeqDataTable
 #' @examples
-#' SeqDataTable2Phyloseq(SeqDataTablePath="23s_test_SeqDataTable.RDS", clustering="curatedOTU", assignment="BLAST", ClusterAssignment="RepresentativeSequence")
-#' SeqDataTable2Phyloseq(SeqDataTablePath="~/Dropbox/BioinformaticPipeline_Env/Results/16s_multirun_test_SeqDataTable.RDS", clustering="ESV", assignment="Idtaxa")
+#' SeqDataTable2Phyloseq(SeqDataTablePath="YOURPATH/YOURDATANAME_SeqDataTable.RDS", clustering="curatedOTU", assignment="BLAST", ClusterAssignment="RepresentativeSequence")
+#' SeqDataTable2Phyloseq(SeqDataTablePath="YOURPATH/YOURDATANAME_SeqDataTable.RDS", clustering="ESV", assignment="Idtaxa")
 #' @export
 
 SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="Idtaxa", BLASTThreshold=NULL, ClusterAssignment="RepresentativeSequence", StandardFastqNaming=TRUE){
 
-    require(DECIPHER)
-    require(phyloseq)
-    require(tidyverse)
 
     #internal functions
         reformatSampleNames<-function(list_item) {
@@ -44,7 +42,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                    StrippedSampleNames_original <-StrippedSampleNames_original %>% paste0( . ,"_")  #  #only trailing underscore added as no name reformatting for non-standard named fastqs - thus they start with "Sample_"
                 }
 
-                DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names
+                DuplicatedSamples<-which(table(StrippedSampleNames_original)>1) %>% names(.)
                 for (DuplicatedSample in DuplicatedSamples) {
                     DuplicateSampleRunNames<-colnames(otumat)[grep(DuplicatedSample, colnames(otumat),fixed=TRUE)]
                     SizeOfDuplicates<-otumat[,DuplicateSampleRunNames] %>% colSums
@@ -54,9 +52,10 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                 }
             
             # 2) strip '__RunX' from end of sample name and record 'RunX' in metadata 
-                SampsAndRuns<-otumat %>% colnames %>%
+                SampsAndRuns<-otumat %>% 
+                            colnames(.) %>%
                             strsplit(., "__") %>%
-                            unlist 
+                            unlist(.)
                 if (length(SampsAndRuns)==length(colnames(otumat))*2) { # if runs were appended length is doubled
                     StrippedSampleNames<-SampsAndRuns %>%
                                 `[`(c(TRUE, FALSE))
@@ -66,7 +65,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                     colnames(otumat)<-StrippedSampleNames
 
                     
-                    Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% sample_data
+                    Metadata<-data.frame(row.names=colnames(otumat),RunIdentifier) %>% phyloseq::sample_data(.)
                 } else {Metadata<-NULL}
             return(list(otumat, Metadata))
         }
@@ -98,10 +97,10 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                                     "CuratedOTURepresentativeSequence")
             
             #ensure standard order to clustering cols as above
-            SeqDataTable<-SeqDataTable %>% relocate(all_of(clusteringcolumns))
+            SeqDataTable<-SeqDataTable %>% dplyr::relocate(., dplyr::all_of(clusteringcolumns))
 
         #recode clustering variables to work with tidyverse as arguments
-            symclustering<-sym(clustering)
+            symclustering<-dplyr::sym(clustering)
             RepresentativeSequenceColumnName<-paste0(toupper(substr(clustering, 1, 1)), substr(clustering, 2, nchar(clustering)), sep="", "RepresentativeSequence")
 
         ## get indices
@@ -128,20 +127,20 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
             #create
                 if (clustering=="ESV"){
                     otumat<-SeqDataTable %>% 
-                        select("ESV", all_of(SampleIndices)) %>%
-                        column_to_rownames("ESV")%>% 
-                        as.matrix()
+                        dplyr::select(., "ESV", dplyr::all_of(SampleIndices)) %>%
+                        tibble::column_to_rownames(., "ESV")%>% 
+                        as.matrix(.)
 
                 } else {        
                     otumat<-SeqDataTable %>% 
-                        group_by( !!symclustering ) %>% 
-                        summarise_at(colnames(SeqDataTable) [SampleIndices],sum) %>% 
-                        column_to_rownames(clustering)%>% 
+                        dplyr::group_by(.,  !!symclustering ) %>% 
+                        dplyr::summarise_at(., colnames(SeqDataTable) [SampleIndices],sum) %>% 
+                        tibble::column_to_rownames(., clustering)%>% 
                         as.matrix()
                 }
 
     #check pipeline version used
-        RunAppendedToSample<-otumat %>% colnames %>% grepl( "__Run", ., fixed = TRUE) %>% all
+        RunAppendedToSample<-otumat %>% colnames(.) %>% grepl("__Run", ., fixed = TRUE) %>% all(.)
 
             if (RunAppendedToSample) {
                 HandledDuplicates<-HandleDuplicateSamplesInMultipleRuns(otumat, StandardFastqNaming)
@@ -179,16 +178,16 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
             if (clustering=="ESV") {
                 taxmat<-SeqDataTable[,AssignmentIndices]
                     taxmat$cluster<-SeqDataTable$ESV
-                    taxmat<-arrange(taxmat, cluster) %>%
-                        column_to_rownames("cluster") %>%
+                    taxmat<-dplyr::arrange(taxmat, cluster) %>%
+                        tibble::column_to_rownames(., "cluster") %>%
                         as.matrix()
             } else {
 
                 if (ClusterAssignment=="RepresentativeSequence") { #take assignments from representative seqs
                     taxmat<-SeqDataTable[SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE,][,AssignmentIndices]
                     taxmat$cluster<-SeqDataTable[[clustering]][SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE]
-                    taxmat<-arrange(taxmat, cluster) %>%
-                        column_to_rownames("cluster") %>%
+                    taxmat<-dplyr::arrange(taxmat, cluster) %>%
+                        tibble::column_to_rownames(., "cluster") %>%
                         as.matrix()
                 } else { # take assignments based on most common assignments to ESVs within cluster (with threshold set as function argument)
                     taxmat<-c()
@@ -204,8 +203,8 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                                 clusterRow <- c( clusterRow,unique(ClusterAssignments[[col]]) )
                             } else {
                                 AbundancePerAssignment<-ClusterAssignments %>%
-                                                            group_by(!!sym(col)) %>%
-                                                            summarise(Proportions=sum(Proportions))
+                                                            dplyr::group_by(., !!dplyr::sym(col)) %>%
+                                                            dplyr::summarise(., Proportions=sum(Proportions))
                                 if (max(AbundancePerAssignment$Proportions) >ClusterAssignment) {
                                     #colAssignment<-as.character(AbundancePerAssignment[AbundancePerAssignment$Proportions==max(AbundancePerAssignment$Proportions),1])
                                     colAssignment<-as.character(AbundancePerAssignment[order(-AbundancePerAssignment$Proportions),][1,1]) #avoids problem of two equally abundant options
@@ -219,7 +218,7 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
                     taxmat<-as.data.frame(rbind(taxmat, clusterRow))
                     }
                 rownames(taxmat)<-NULL
-                taxmat<-column_to_rownames(taxmat,"clusterName" )
+                taxmat<-tibble::column_to_rownames(taxmat,"clusterName" )
                 taxmat<-as.matrix(taxmat)
                 }
             }
@@ -228,51 +227,51 @@ SeqDataTable2Phyloseq<-function(SeqDataTablePath, clustering="ESV", assignment="
         #refseqs
         if (clustering=="ESV") {
             refseqs_df<-SeqDataTable[,c("Sequence","ESV")]
-            refseqs_df<- arrange(refseqs_df, ESV ) %>%
-            column_to_rownames("ESV")
-            refseqs <- DNAStringSet(refseqs_df$Sequence)
+            refseqs_df<- dplyr::arrange(refseqs_df, ESV ) %>%
+                tibble::column_to_rownames(., "ESV")
+            refseqs <- Biostrings::DNAStringSet(refseqs_df$Sequence)
             names(refseqs)<-rownames(refseqs_df)
         } else {
             refseqs_df<-SeqDataTable[SeqDataTable[[RepresentativeSequenceColumnName]]==TRUE,c("Sequence",clustering)]
-            refseqs_df<- arrange(refseqs_df, clustering ) %>%
-            column_to_rownames(clustering)
-            refseqs <- DNAStringSet(refseqs_df$Sequence)
+            refseqs_df<- dplyr::arrange(refseqs_df, clustering ) %>%
+                tibble::column_to_rownames(., clustering)
+            refseqs <- Biostrings::DNAStringSet(refseqs_df$Sequence)
             names(refseqs)<-rownames(refseqs_df)
         }
 
 
     #create phyloseq object depending on which matrices present
         if (assignment=="None" & is.null(Metadata)) {
-            ps<-phyloseq(
+            ps<-phyloseq::phyloseq(
                         #sample_data(Metadata),
-                        otu_table(otumat, taxa_are_rows=TRUE),
+                        phyloseq::otu_table(otumat, taxa_are_rows=TRUE),
                         #tax_table(taxmat),
                         #phy_tree(),
-                        refseq(refseqs) 
+                        phyloseq::refseq(refseqs) 
                     )
         } else if (assignment!="None" & is.null(Metadata)) {
-            ps<-phyloseq(
+            ps<-phyloseq::phyloseq(
                         #sample_data(Metadata),
-                        otu_table(otumat, taxa_are_rows=TRUE),
-                        tax_table(taxmat),
+                        phyloseq::otu_table(otumat, taxa_are_rows=TRUE),
+                        phyloseq::tax_table(taxmat),
                         #phy_tree(),
-                        refseq(refseqs) 
+                        phyloseq::refseq(refseqs) 
                     )
         } else if (assignment=="None" & !is.null(Metadata)) {
-            ps<-phyloseq(
-                        sample_data(Metadata),
-                        otu_table(otumat, taxa_are_rows=TRUE),
+            ps<-phyloseq::phyloseq(
+                        phyloseq::sample_data(Metadata),
+                        phyloseq::otu_table(otumat, taxa_are_rows=TRUE),
                         #tax_table(taxmat),
                         #phy_tree(),
-                        refseq(refseqs) 
+                        phyloseq::refseq(refseqs) 
                     )
         } else if (assignment!="None" & !is.null(Metadata)) {
-            ps<-phyloseq(
-                        sample_data(Metadata),
-                        otu_table(otumat, taxa_are_rows=TRUE),
-                        tax_table(taxmat),
+            ps<-phyloseq::phyloseq(
+                        phyloseq::sample_data(Metadata),
+                        phyloseq::otu_table(otumat, taxa_are_rows=TRUE),
+                        phyloseq::tax_table(taxmat),
                         #phy_tree(),
-                        refseq(refseqs) 
+                        phyloseq::refseq(refseqs) 
                     )
         }
 
